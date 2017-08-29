@@ -1,4 +1,5 @@
 import re
+import itertools
 import numpy as np
 from html.parser import HTMLParser
 
@@ -62,3 +63,17 @@ def batch_iter(data, batch_size, num_epochs, shuffle=True):
             start_index = batch_num * batch_size
             end_index = min((batch_num + 1) * batch_size, data_size)
             yield shuffled_data[start_index: end_index]
+
+
+class MultiLabelIntegerEncoder:
+    def fit(self, labels):
+        self.id2label_ = dict(enumerate(set(itertools.chain(*labels))))
+        self.label2id_ = dict(zip(self.id2label_.values(), self.id2label_.keys()))
+
+    def transform(self, labels):
+        return [[self.label2id_.get(l, -1) for l in ls] for ls in labels]
+
+
+    def fit_transform(self, labels):
+        self.fit(labels)
+        return self.transform(labels)
