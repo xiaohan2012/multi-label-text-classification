@@ -1,4 +1,5 @@
 import numpy as np
+import tensorflow as tf
 
 
 def precision(p, t):
@@ -19,3 +20,10 @@ def precision_at_ks(Y_pred_scores, Y_test, ks=[1, 3, 5, 10]):
         precision_at_k = np.mean([precision(set(yt), yp) for yt, yp in zip(Y_test, Y_pred)])
         print('precision at {}: {}'.format(k, precision_at_k))
 
+
+def tf_precision_at_k(pred_values, correct_labels, k):
+    _, pred_labels = tf.nn.top_k(pred_values, k=k, sorted=True)
+
+    num_intersections = tf.sets.set_size(tf.sets.set_intersection(pred_labels, correct_labels))
+
+    return tf.reduce_mean(tf.divide(num_intersections, k))
