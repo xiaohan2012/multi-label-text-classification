@@ -21,9 +21,9 @@ def precision_at_ks(Y_pred_scores, Y_test, ks=[1, 3, 5, 10]):
         print('precision at {}: {}'.format(k, precision_at_k))
 
 
-def tf_precision_at_k(pred_values, correct_labels, k):
+def tf_precision_at_k(pred_values, correct_labels, k, name=None):
     _, pred_labels = tf.nn.top_k(pred_values, k=k, sorted=True)
 
     num_intersections = tf.sets.set_size(tf.sets.set_intersection(pred_labels, correct_labels))
 
-    return tf.reduce_mean(tf.divide(num_intersections, k))
+    return tf.reduce_mean(tf.divide(num_intersections, k), name=name)
