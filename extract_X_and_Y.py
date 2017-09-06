@@ -1,4 +1,9 @@
 # coding: utf-8
+"""
+encode:
+1. the text using tf-idf
+2. labels into binary vector
+"""
 
 import os
 import pickle as pkl

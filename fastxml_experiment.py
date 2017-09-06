@@ -13,7 +13,6 @@ from fastxml.weights import propensity
 from eval_helpers import precision_at_ks
 
 
-
 tf.flags.DEFINE_string('data_dir', 'data/stackexchange/datascience/', 'directory of dataset')
 tf.flags.DEFINE_integer('tag_freq_threshold', 5, 'minimum frequency of a tag')
 
