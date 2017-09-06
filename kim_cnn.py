@@ -20,13 +20,16 @@ class KimCNN(object):
             loss_func='softmax'):
 
         # Placeholders for input, output and dropout
-        self.input_x = tf.placeholder(tf.int32, [None, sequence_length], name="input_x")
+        self.input_x = tf.placeholder(
+            tf.int32, [None, sequence_length], name="input_x")
 
         # label indicator matrix
-        self.input_y_binary = tf.placeholder(tf.float32, [None, num_classes], name="input_y_binary")
+        self.input_y_binary = tf.placeholder(
+            tf.float32, [None, num_classes], name="input_y_binary")
 
-        # label list, shape is not defined
-        self.input_y_labels = tf.placeholder(tf.int32, shape=[None, None], name='input_y_labels')
+        # label list, a SparseTensor because label list length varies
+        self.input_y_labels = tf.sparse_placeholder(
+            tf.int32, shape=[None, num_classes], name='input_y_labels')
 
         self.dropout_keep_prob = tf.placeholder(tf.float32, name="dropout_keep_prob")
 
