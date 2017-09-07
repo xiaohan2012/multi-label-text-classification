@@ -27,6 +27,10 @@ tf.flags.DEFINE_integer('tag_freq_threshold', 5, 'minimum frequency of a tag')
 tf.flags.DEFINE_float("dev_sample_percentage", .1, "Percentage of the training data to use for validation")
 tf.flags.DEFINE_float("max_document_length", 2000, "Maximum length of document, exceeding part is truncated")
 
+# Architecutural parameters
+
+tf.flags.DEFINE_string("loss_function", 'softmax', "loss function: (softmax|sigmoid) (Default: softmax)")
+
 # Model Hyperparameters
 tf.flags.DEFINE_integer("embedding_dim", 128, "Dimensionality of character embedding (default: 128)")
 tf.flags.DEFINE_string("filter_sizes", "3,4,5", "Comma-separated filter sizes (default: '3,4,5')")
@@ -100,7 +104,8 @@ with tf.Graph().as_default():
             embedding_size=FLAGS.embedding_dim,
             filter_sizes=list(map(int, FLAGS.filter_sizes.split(","))),
             num_filters=FLAGS.num_filters,
-            l2_reg_lambda=FLAGS.l2_reg_lambda)
+            l2_reg_lambda=FLAGS.l2_reg_lambda,
+            loss_function=FLAGS.loss_function)
 
         # Define Training procedure
         global_step = tf.Variable(0, name="global_step", trainable=False)

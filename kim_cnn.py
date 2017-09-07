@@ -17,7 +17,7 @@ class KimCNN(object):
     def __init__(
             self, sequence_length, num_classes, vocab_size,
             embedding_size, filter_sizes, num_filters, l2_reg_lambda=0.0,
-            loss_func='softmax'):
+            loss_function='softmax'):
 
         # Placeholders for input, output and dropout
         self.input_x = tf.placeholder(
@@ -92,11 +92,11 @@ class KimCNN(object):
 
         # CalculateMean cross-entropy loss
         with tf.name_scope("loss"):
-            if loss_func == 'sigmoid':
+            if loss_function == 'sigmoid':
                 print('use sigmoid xentropy')
                 losses = tf.nn.sigmoid_cross_entropy_with_logits(logits=self.scores,
                                                                  labels=self.input_y_binary)
-            elif loss_func == 'softmax':
+            elif loss_function == 'softmax':
                 print('use softmax xentropy')
                 losses = tf.nn.softmax_cross_entropy_with_logits(logits=self.scores,
                                                                  labels=self.input_y_binary)
