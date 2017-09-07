@@ -61,6 +61,7 @@ class KimCNN(object):
                 # Apply nonlinearity
                 h = tf.nn.relu(tf.nn.bias_add(conv, b), name="relu")
                 # Maxpooling over the outputs
+                # dim still 4d
                 pooled = tf.nn.max_pool(
                     h,
                     ksize=[1, sequence_length - filter_size + 1, 1, 1],
@@ -71,7 +72,7 @@ class KimCNN(object):
 
         # Combine all the pooled features
         num_filters_total = num_filters * len(filter_sizes)
-        self.h_pool = tf.concat(pooled_outputs, 3)
+        self.h_pool = tf.concat(pooled_outputs, 3)  # concat by last dim
         self.h_pool_flat = tf.reshape(self.h_pool, [-1, num_filters_total])
 
         # Add dropout
