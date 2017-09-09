@@ -26,7 +26,7 @@ df = pd.read_csv('{}/posts.csv'.format(data_dir), sep=',')
 print("dataset containing {} records".format(df.shape[0]))
 
 
-qs = df[df['PostTypeId'] == 1]
+qs = df[df['PostTypeId'] == 1]  # we only consider questions here
 
 print("contains {} questions".format(qs.shape[0]))
 
