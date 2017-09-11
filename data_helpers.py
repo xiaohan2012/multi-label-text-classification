@@ -1,6 +1,8 @@
 import re
 import itertools
+import collections
 import numpy as np
+import random
 from html.parser import HTMLParser
 
 
@@ -29,7 +31,7 @@ class MLStripper(HTMLParser):
     def __init__(self):
         self.reset()
         self.strict = False
-        self.convert_charrefs= True
+        self.convert_charrefs = True
         self.fed = []
 
     def handle_data(self, d):
@@ -73,7 +75,71 @@ class MultiLabelIntegerEncoder:
     def transform(self, labels):
         return [[self.label2id_.get(l, -1) for l in ls] for ls in labels]
 
-
     def fit_transform(self, labels):
         self.fit(labels)
         return self.transform(labels)
+
+
+class RWBatchGenerator():
+    """Random walk batch generator
+    """
+    def __init__(self, walks, batch_size, num_skips, skip_window):
+        """
+        Args:
+
+        walks: list of integer list
+        batch_size: int
+        num_skips: int, within each window, number of examples
+        skip_window: int, sliding window size
+        """
+        self.walks = walks
+        self.batch_size = batch_size
+        self.num_skips = num_skips
+        self.skip_window = skip_window
+
+        self.current_walk = 0
+        self.data = self.walks[0]
+
+        self.span = 2 * self.skip_window + 1  # [ self.skip_window target self.skip_window ]
+        self.data_index = 0
+        
+    def next_batch(self):
+        batch = np.ndarray(shape=(self.batch_size), dtype=np.int32)
+        labels = np.ndarray(shape=(self.batch_size), dtype=np.int32)
+        buffer = collections.deque(maxlen=self.span)
+
+        if self.data_index + self.span > len(self.data):
+            self.data_index = 0
+
+        buffer.extend(self.data[self.data_index:self.data_index + self.span])
+        self.data_index += self.span
+        for i in range(self.batch_size // self.num_skips):
+            target = self.skip_window  # target label at the center of the buffer
+            targets_to_avoid = [self.skip_window]
+            for j in range(self.num_skips):
+                # sample unique targets
+                while target in targets_to_avoid:
+                    target = random.randint(0, self.span-1)
+                targets_to_avoid.append(target)
+                batch[i * self.num_skips + j] = buffer[self.skip_window]
+                labels[i * self.num_skips + j] = buffer[target]
+            if self.data_index == len(self.data):
+                self.current_walk += 1
+
+                if self.current_walk == len(self.walks):  # used all walks
+                    self.current_walk = 0
+                    
+                self.data = self.walks[self.current_walk]
+
+                # equivalent to: buffer[:] = self.data[:self.span]
+                buffer.clear()
+                buffer.extend(self.data[:self.span])
+                self.data_index = self.span
+            else:
+                buffer.append(self.data[self.data_index])
+                self.data_index += 1
+        # Backtrack a little bit to avoid skipping words in the end of a batch
+        self.data_index = (self.data_index + len(self.data) - self.span) % len(self.data)
+
+        return (batch, labels)
+    
