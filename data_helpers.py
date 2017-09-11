@@ -102,7 +102,15 @@ class RWBatchGenerator():
 
         self.span = 2 * self.skip_window + 1  # [ self.skip_window target self.skip_window ]
         self.data_index = 0
-        
+
+    @classmethod
+    def read_walks(cls, path):
+        walks = []
+        with open(path, 'r') as f:
+            for l in f:
+                walks.append(list(map(int, l.strip().split())))
+        return walks
+    
     def next_batch(self):
         batch = np.ndarray(shape=(self.batch_size), dtype=np.int32)
         labels = np.ndarray(shape=(self.batch_size), dtype=np.int32)
