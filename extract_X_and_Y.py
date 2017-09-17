@@ -36,7 +36,7 @@ X = vectorizer.fit_transform(text)
 
 
 ldf = pd.read_csv(label_path, header=None)
-labels = ldf[0]
+labels = ldf[1]
 
 
 label_encoder = MultiLabelIntegerEncoder()
