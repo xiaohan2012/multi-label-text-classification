@@ -96,3 +96,6 @@ figs/*
 bad_examples/*
 
 MNIST_data
+
+eval_results/
+runs
