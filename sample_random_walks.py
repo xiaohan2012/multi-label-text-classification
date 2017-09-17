@@ -28,10 +28,10 @@ def random_walk(g, start_node, walk_length, alpha=0.05):
 
 
 def yield_n_random_walks(n, g, walk_length, alpha):
-    nodes = np.arange(g.num_vertices())
+    nodes = list(map(int, g.vertices()))
     while n > 0:
         if n >= g.num_vertices():
-            nodes_to_start = np.arange(g.num_vertices())
+            nodes_to_start = nodes
         else:
             nodes_to_start = np.random.choice(nodes, n, replace=False)
 
@@ -45,14 +45,16 @@ if __name__ == '__main__':
     data_dir = 'data/stackexchange/datascience/'
 
     # params on random walk
-    num_walks = 10000
+    num_walks_per_node = 80
+    window_size = 10
     walk_length = 6
-
+    alpha = 0.05
+    
     # output
     walks = []  # list of list of nodes
 
     g = load_graph('{}/question_graph.gt'.format(data_dir))
-    total = 6095*2
+    total = num_walks_per_node * g.num_vertices()
     with open('{}/random_walks.txt'.format(data_dir), 'w') as f:
-        for walk in tqdm(yield_n_random_walks(total, g, 10, 0.05), total=total):
+        for walk in tqdm(yield_n_random_walks(total, g, walk_length, alpha), total=total):
             f.write(' '.join(map(str, walk)) + '\n')
