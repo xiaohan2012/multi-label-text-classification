@@ -38,6 +38,12 @@ output_path = '{}/labels_for_visualization.tsv'.format(data_dir)
 
 print('save to {}'.format(output_path))
 
+label2color = {}
 with open(output_path, 'w') as f:
-    for l in labels_to_show:
-        f.write(l + '\n')
+    f.write("name\tlabel\tcolor\n")
+    for qid, l in zip(qids, labels_to_show):
+        if l not in label2color:
+            label2color[l] = len(label2color)
+            
+        color = label2color[l]
+        f.write("{}\t{}\t{}\n".format(qid, l, color))
