@@ -99,5 +99,5 @@ new_g.save('{}/question_graph.gt'.format(data_dir))
 
 
 print('saving connected_question_ids')
-pkl.dump(new_prop_question_id,
+pkl.dump(list(new_prop_question_id.a),
          open('{}/connected_question_ids.pkl'.format(data_dir), 'wb'))

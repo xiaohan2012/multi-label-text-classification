@@ -1,14 +1,20 @@
+
 # coding: utf-8
+
+# In[1]:
+
+
 
 import os
 import re
 import pandas as pd
+import pickle as pkl
 import itertools
 import tensorflow as tf
 from data_helpers import strip_tags, clean_str
 
 
-tf.flags.DEFINE_string('data_dir', '', 'directory of dataset')
+tf.flags.DEFINE_string('data_dir', 'data/stackexchange/datascience', 'directory of dataset')
 tf.flags.DEFINE_integer('tag_freq_threshold', 5, 'minimum frequency of a tag')
 
 FLAGS = tf.flags.FLAGS
@@ -26,9 +32,20 @@ df = pd.read_csv('{}/posts.csv'.format(data_dir), sep=',')
 print("dataset containing {} records".format(df.shape[0]))
 
 
-qs = df[df['PostTypeId'] == 1]  # we only consider questions here
+# In[15]:
+
+target_question_ids = set(pkl.load(open('{}/connected_question_ids.pkl'.format(data_dir), 'rb')))
+id_target = df['Id'].apply(target_question_ids.__contains__)
+
+
+# In[19]:
+
+qs = df[id_target & (df['PostTypeId'] == 1)]  # we only consider questions here
 
 print("contains {} questions".format(qs.shape[0]))
+
+
+# In[26]:
 
 # extract tags
 regexp = re.compile("<(.+?)>")
@@ -53,7 +70,7 @@ normalized_tags = [[t for t in ts if t in tag_set] for ts in tags]
 
 
 # save labels to file
-y = pd.Series(list(map(lambda l: ",".join(l), normalized_tags)))
+y = pd.Series(list(map(lambda l: ",".join(l), normalized_tags)), index=qs['Id'])
 
 mask = (y.apply(len) > 0)
 
@@ -66,14 +83,14 @@ assert y.shape[0] == qs.shape[0]
 print('num. questions with at least one valid labels: {}'.format(qs.shape[0]))
 
 print('saving labels to {}'.format(label_path))
-y.to_csv(label_path, index=False)
+y.to_csv(label_path)
 
 
 body = qs['Body'].apply(strip_tags).apply(clean_str)
 title = qs['Title'].apply(strip_tags).apply(clean_str)
 
 # concatenate the texts
-input_text = pd.Series([' '.join(l) for l in list(zip(title, body))])
+input_text = pd.Series([' '.join(l) for l in list(zip(title, body))], index=qs['Id'])
 
 
 print("saving input text to {}".format(text_path))
