@@ -1,9 +1,4 @@
-
 # coding: utf-8
-
-# In[1]:
-
-
 
 import os
 import re
@@ -15,7 +10,7 @@ from data_helpers import strip_tags, clean_str
 
 
 tf.flags.DEFINE_string('data_dir', 'data/stackexchange/datascience', 'directory of dataset')
-tf.flags.DEFINE_integer('tag_freq_threshold', 5, 'minimum frequency of a tag')
+tf.flags.DEFINE_integer('tag_freq_threshold', 0, 'minimum frequency of a tag')
 
 FLAGS = tf.flags.FLAGS
 FLAGS._parse_flags()
@@ -32,20 +27,14 @@ df = pd.read_csv('{}/posts.csv'.format(data_dir), sep=',')
 print("dataset containing {} records".format(df.shape[0]))
 
 
-# In[15]:
-
 target_question_ids = set(pkl.load(open('{}/connected_question_ids.pkl'.format(data_dir), 'rb')))
 id_target = df['Id'].apply(target_question_ids.__contains__)
 
-
-# In[19]:
 
 qs = df[id_target & (df['PostTypeId'] == 1)]  # we only consider questions here
 
 print("contains {} questions".format(qs.shape[0]))
 
-
-# In[26]:
 
 # extract tags
 regexp = re.compile("<(.+?)>")
@@ -61,7 +50,6 @@ tag_freq = pd.Series(list(itertools.chain(*tags))).value_counts()
 valid_tags = tag_freq.index[tag_freq > tag_freq_threshold]
 tag_set = set(valid_tags)
 
-
 print('number of unique labels (frequency>{}): {}'.format(
     tag_freq_threshold, len(tag_set)))
 
@@ -72,10 +60,8 @@ normalized_tags = [[t for t in ts if t in tag_set] for ts in tags]
 # save labels to file
 y = pd.Series(list(map(lambda l: ",".join(l), normalized_tags)), index=qs['Id'])
 
-mask = (y.apply(len) > 0)
+mask = (y.apply(len) > 0).as_matrix()
 
-y = y[mask]
-qs.index = mask.index
 qs = qs[mask]
 
 assert y.shape[0] == qs.shape[0]
@@ -95,4 +81,3 @@ input_text = pd.Series([' '.join(l) for l in list(zip(title, body))], index=qs['
 
 print("saving input text to {}".format(text_path))
 input_text.to_csv(text_path)
-
