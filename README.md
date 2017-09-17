@@ -6,6 +6,7 @@
 - `extract_X_and_Y.py`: extract tfidf features and encode labels from text
 - `sample_random_walks.py`: sample random walks on a graph
 - `build_question_graph.py`: extract largest CC in graph and dump it (including the vertex-question id mapping)
+- `extract_embedding_labels.py`: extract labels for embedding visualization
 
 # pipeline
 
