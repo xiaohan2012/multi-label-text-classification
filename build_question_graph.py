@@ -5,7 +5,7 @@ import numpy as np
 import itertools
 import pickle as pkl
 
-from graph_tool import Graph
+from graph_tool import Graph, GraphView
 from graph_tool.topology import label_largest_component
 from collections import defaultdict
 from scipy import sparse as sp
@@ -71,11 +71,22 @@ prop = label_largest_component(g)
 f = np.sum(prop.a) / len(prop.a)
 print('fraciton of nodes in largest cc: {}'.format(f))
 
-print('saving graph')
-g.save('{}/question_graph.gt'.format(data_dir))
+# extract the largest component
+sub_g = GraphView(g, vfilt=prop)
+
+print('saving largest CC in graph')
+sub_g.save('{}/question_graph.gt'.format(data_dir))
 
 
 print('dumping id mapping')
 pkl.dump(
     {'id2q_map': id2q_map, 'q2id_map': q2id_map, 'id2u_map': id2u_map, 'u2id_map': u2id_map},
     open('{}/question_id_mapping.pkl'.format(data_dir), 'wb'))
+
+
+print("dumping connected question ids")
+ids = list(map(int, sub_g.vertices()))
+pkl.dump(
+    ids,
+    open('{}/connected_question_ids.pkl'.format(data_dir), 'wb')
+)
