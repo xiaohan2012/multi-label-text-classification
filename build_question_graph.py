@@ -3,6 +3,7 @@
 
 import pandas as pd
 import numpy as np
+import pickle as pkl
 import itertools
 
 from graph_tool import Graph
@@ -95,3 +96,8 @@ new_g.vertex_properties['question_id'] = new_prop_question_id
 
 print('saving largest CC in graph')
 new_g.save('{}/question_graph.gt'.format(data_dir))
+
+
+print('saving connected_question_ids')
+pkl.dump(new_prop_question_id,
+         open('{}/connected_question_ids.pkl'.format(data_dir), 'wb'))
