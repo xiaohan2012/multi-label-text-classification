@@ -1,11 +1,11 @@
 # coding: utf-8
 
+
 import pandas as pd
 import numpy as np
 import itertools
-import pickle as pkl
 
-from graph_tool import Graph, GraphView
+from graph_tool import Graph
 from graph_tool.topology import label_largest_component
 from collections import defaultdict
 from scipy import sparse as sp
@@ -67,26 +67,31 @@ g = Graph()
 edges = zip(*qm.nonzero())
 g.add_edge_list(edges)
 
-prop = label_largest_component(g)
-f = np.sum(prop.a) / len(prop.a)
+vfilt = label_largest_component(g)
+f = np.sum(vfilt.a) / len(vfilt.a)
 print('fraciton of nodes in largest cc: {}'.format(f))
 
-# extract the largest component
-sub_g = GraphView(g, vfilt=prop)
+
+prop_question_id = g.new_vertex_property('int')
+prop_question_id.a = np.array(list(id2q_map.values()))
+
+# focus on largest CC
+g.set_vertex_filter(vfilt)
+
+# re-index the graph
+# SO qustion: https://stackoverflow.com/questions/46264296/graph-tool-re-index-vertex-ids-to-be-consecutive-integers
+n2i = {n: i for i, n in enumerate(g.vertices())}
+i2n = dict(zip(n2i.values(), n2i.keys()))
+
+new_g = Graph()
+new_g.add_edge_list([(n2i[e.source()], n2i[e.target()]) for e in g.edges()])
+
+
+# update question ids
+new_prop_question_id = new_g.new_vertex_property('int')
+new_prop_question_id.a = [prop_question_id[i2n[i]] for i in range(new_g.num_vertices())]
+new_g.vertex_properties['question_id'] = new_prop_question_id
+
 
 print('saving largest CC in graph')
-sub_g.save('{}/question_graph.gt'.format(data_dir))
-
-
-print('dumping id mapping')
-pkl.dump(
-    {'id2q_map': id2q_map, 'q2id_map': q2id_map, 'id2u_map': id2u_map, 'u2id_map': u2id_map},
-    open('{}/question_id_mapping.pkl'.format(data_dir), 'wb'))
-
-
-print("dumping connected question ids")
-ids = list(map(int, sub_g.vertices()))
-pkl.dump(
-    ids,
-    open('{}/connected_question_ids.pkl'.format(data_dir), 'wb')
-)
+new_g.save('{}/question_graph.gt'.format(data_dir))
