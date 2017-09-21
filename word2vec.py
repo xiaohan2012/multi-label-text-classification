@@ -25,8 +25,8 @@ class Word2Vec():
         assert self.embedding_size > 0
 
         # Input data.
-        self.train_inputs = tf.placeholder(tf.int32, shape=None)
-        self.train_labels = tf.placeholder(tf.int32, shape=[None, 1])
+        self.train_inputs = tf.placeholder(tf.int32, shape=None, name='input_x')
+        self.train_labels = tf.placeholder(tf.int32, shape=[None, 1], name='input_y')
 
         # Ops and variables pinned to the CPU because of missing GPU implementation
         with tf.device('/cpu:0'):

@@ -8,8 +8,9 @@ class Combined():
 
         # input document ids
         # to retrieve node embedding
-        self.node_ids = tf.placeholder(dtype=tf.int32, shape=None)
-
+        self.node_ids = tf.placeholder(dtype=tf.int32, shape=None, name="input_node_ids")
+        self.l2_loss = tf.constant(0.0)
+        
         self.add_output()
         self.add_losses()
         self.add_performance()
@@ -25,8 +26,8 @@ class Combined():
                        self.cnn.num_classes],
                 initializer=tf.contrib.layers.xavier_initializer())
             b = tf.Variable(tf.constant(0.1, shape=[self.cnn.num_classes]), name="b")
-            self.cnn.l2_loss += tf.nn.l2_loss(W)
-            self.cnn.l2_loss += tf.nn.l2_loss(b)
+            self.l2_loss += tf.nn.l2_loss(W)
+            self.l2_loss += tf.nn.l2_loss(b)
 
             # look up the node embeddings
             node_embeddings = tf.gather(self.dw.normalized_embeddings, self.node_ids)
@@ -36,7 +37,7 @@ class Combined():
             self.predictions = tf.argmax(self.scores, 1, name="predictions")
 
     def add_losses(self):
-        # CalculateMean cross-entropy loss
+        # CalculateMean cross-entropy loss        
         with tf.name_scope("loss"):
             if self.cnn.loss_function == 'sigmoid':
                 print('use sigmoid xentropy')
@@ -50,7 +51,7 @@ class Combined():
                 raise ValueError('invalid loss function')
 
             # two losses
-            self.label_loss = tf.reduce_mean(losses) + self.cnn.l2_reg_lambda * self.cnn.l2_loss
+            self.label_loss = tf.reduce_mean(losses) + self.cnn.l2_reg_lambda * self.l2_loss
             self.graph_loss = self.dw.loss
 
     def add_performance(self):
