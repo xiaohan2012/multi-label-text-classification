@@ -30,7 +30,8 @@ class Combined():
             self.l2_loss += tf.nn.l2_loss(b)
 
             # look up the node embeddings
-            node_embeddings = tf.gather(self.dw.normalized_embeddings, self.node_ids)
+            node_embeddings = tf.nn.embedding_lookup(self.dw.normalized_embeddings, self.node_ids,
+                                                     name='node_embeddings')
             input_tensor = tf.concat([self.cnn.h_drop, node_embeddings],
                                      1, name="input_concat")
             self.scores = tf.nn.xw_plus_b(input_tensor, W, b, name="scores")

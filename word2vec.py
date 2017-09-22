@@ -33,8 +33,9 @@ class Word2Vec():
             # Look up self.embeddings for inputs.
             with tf.name_scope('embedding'):
                 self.embeddings = tf.Variable(
-                    tf.random_uniform([self.vocabulary_size, self.embedding_size], -1.0, 1.0))
-                embed = tf.nn.embedding_lookup(self.embeddings, self.train_inputs)
+                    tf.random_uniform([self.vocabulary_size, self.embedding_size], -1.0, 1.0),
+                    name='table')
+                embed = tf.nn.embedding_lookup(self.embeddings, self.train_inputs, name='looked-up-value')
 
             with tf.name_scope('nce'):
                 # Construct the variables for the NCE loss
