@@ -1,7 +1,6 @@
 # coding: utf-8
 
 import os
-import time
 import pickle as pkl
 import numpy as np
 import tensorflow as tf
