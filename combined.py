@@ -5,6 +5,8 @@ from eval_helpers import tf_precision_at_k
 class Combined():
     def __init__(self, cnn_model, dw_model):
         self.cnn, self.dw = cnn_model, dw_model
+        print('cnn:', type(self.cnn))
+        print('dw:', type(self.dw))
 
         # input document ids
         # to retrieve node embedding
