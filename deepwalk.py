@@ -52,12 +52,10 @@ num_sampled = 64    # Number of negative examples to sample.
 
 
 
-# In[7]:
-
 from word2vec import Word2Vec
 graph = tf.Graph()
 with graph.as_default():
-    model = Word2Vec(batch_size, num_sampled,
+    model = Word2Vec(num_sampled,
                      vocabulary_size=vocabulary_size, embedding_size=embedding_size)
 
     # Construct the SGD optimizer using a learning rate of 1.0.

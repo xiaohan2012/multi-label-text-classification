@@ -17,7 +17,8 @@ class Word2Vec():
     def __init__(self,
                  num_sampled,
                  vocabulary_size,
-                 embedding_size):
+                 embedding_size,
+                 embedding_value=None):
 
         self.vocabulary_size, self.embedding_size = (vocabulary_size,
                                                      embedding_size)
@@ -32,8 +33,14 @@ class Word2Vec():
         with tf.device('/cpu:0'):
             # Look up self.embeddings for inputs.
             with tf.name_scope('embedding'):
+                if embedding_value is None:
+                    embedding_value = tf.random_uniform(
+                        [self.vocabulary_size, self.embedding_size], -1.0, 1.0)
+                else:
+                    assert (self.vocabulary_size, self.embedding_size) == embedding_value.shape, 'shape does not match'
+
                 self.embeddings = tf.Variable(
-                    tf.random_uniform([self.vocabulary_size, self.embedding_size], -1.0, 1.0),
+                    embedding_value,
                     name='table')
                 embed = tf.nn.embedding_lookup(self.embeddings, self.train_inputs, name='looked-up-value')
 

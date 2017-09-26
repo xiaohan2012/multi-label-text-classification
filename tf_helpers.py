@@ -55,3 +55,15 @@ def save_embedding_for_viz(embeddings, session, metadata_path, checkpoint_dir):
     saver.save(session, os.path.join(checkpoint_dir, 'model2.ckpt'), 1)
     print('embedding for visualization saved')
 
+
+def get_variable_value_from_checkpoint(checkpoint_file, variable_name):
+    """load from checkpoint_file and read the value of the variable of `variable_name`
+    """
+    sess = tf.Session()
+    with sess.as_default():
+        saver = tf.train.import_meta_graph("{}.meta".format(checkpoint_file))
+        saver.restore(sess, checkpoint_file)
+
+        embedding_table = sess.graph.get_operation_by_name(variable_name)
+        val = embedding_table.outputs[0].eval()
+    return val
