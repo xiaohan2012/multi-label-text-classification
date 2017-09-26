@@ -39,7 +39,8 @@ class KimCNN():
 
         # label list, a SparseTensor because label list length varies
         self.input_y_labels = tf.sparse_placeholder(
-            tf.int32, shape=[None, self.num_classes], name='input_y_labels')
+            tf.int32, shape=[None, self.num_classes],
+            name='input_y_labels')
 
         self.dropout_keep_prob = tf.placeholder(tf.float32, name="dropout_keep_prob")
 

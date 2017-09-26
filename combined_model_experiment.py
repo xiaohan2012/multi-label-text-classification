@@ -1,8 +1,4 @@
-
 # coding: utf-8
-
-# In[1]:
-
 
 import os
 import pickle as pkl
@@ -23,6 +19,9 @@ from word2vec import Word2Vec
 from combined import Combined
 from eval_helpers import label_lists_to_sparse_tuple
 from data_helpers import batch_iter, RWBatchGenerator
+from tf_helpers import get_variable_value_from_checkpoint
+                
+from tensorflow.python import debug as tf_debug
 from tf_helpers import save_embedding_for_viz
 
 
@@ -50,9 +49,6 @@ tf.flags.DEFINE_float("l2_reg_lambda", 0.0, "L2 regularization lambda (default: 
 tf.flags.DEFINE_integer("batch_size", 64, "Batch Size (default: 64)")
 
 
-# In[3]:
-
-
 tf.flags.DEFINE_integer("dw_batch_size", 128, "Batch Size for deep walk model (default: 128)")
 tf.flags.DEFINE_integer("dw_skip_window", 3, "How many words to consider left and right. (default: 3)")
 tf.flags.DEFINE_integer("dw_num_skips", 4, "How many times to reuse an input to generate a label. (default: 4)")
@@ -60,14 +56,18 @@ tf.flags.DEFINE_integer("dw_embedding_size", 128, "Dimensionality of node embedd
 tf.flags.DEFINE_integer("dw_num_negative_samples", 64, "Number of negative examples to sample. (default: 64)")
 
 
-# In[4]:
-
-
 # global training parameter
 tf.flags.DEFINE_integer("num_epochs", 200, "Number of training epochs (default: 200)")
 tf.flags.DEFINE_integer("evaluate_every", 100, "Evaluate model on dev set after this many steps (default: 100)")
 tf.flags.DEFINE_integer("checkpoint_every", 100, "Save model after this many steps (default: 100)")
 tf.flags.DEFINE_integer("num_checkpoints", 5, "Number of checkpoints to store (default: 5)")
+
+tf.flags.DEFINE_string("pretrained_embedding_checkpoint_dir", "",
+                       "directory of checkpoint where pretrained embedding lives")
+tf.flags.DEFINE_string("pretrained_embedding_name",
+                       "embedding/table",
+                       "variable name of the pretrained emebdding (defualt: embedding/table)")
+
 # Misc Parameters
 tf.flags.DEFINE_boolean("allow_soft_placement", True, "Allow device soft device placement")
 tf.flags.DEFINE_boolean("log_device_placement", False, "Log placement of ops on devices")
@@ -146,6 +146,9 @@ with tf.Graph().as_default():
       log_device_placement=FLAGS.log_device_placement)
     sess = tf.Session(config=session_conf)
 
+    # DEBUG
+    # sess = tf_debug.LocalCLIDebugWrapperSession(sess)
+
     with sess.as_default():
         with tf.name_scope('kim_cnn'):
             cnn = KimCNN(
@@ -160,9 +163,19 @@ with tf.Graph().as_default():
                 redefine_output_layer=True)
 
         with tf.name_scope('dw'):
-            dw = Word2Vec(FLAGS.dw_num_negative_samples,
-                          vocabulary_size,
-                          FLAGS.dw_embedding_size)
+            if FLAGS.pretrained_embedding_checkpoint_dir:
+                print('use pretrained embedding')
+                embedding_value = get_variable_value_from_checkpoint(
+                    FLAGS.pretrained_embedding_checkpoint_dir,
+                    FLAGS.pretrained_embedding_name)
+                dw = Word2Vec(FLAGS.dw_num_negative_samples,
+                              vocabulary_size,
+                              FLAGS.dw_embedding_size,
+                              embedding_value=embedding_value)
+            else:
+                dw = Word2Vec(FLAGS.dw_num_negative_samples,
+                              vocabulary_size,
+                              FLAGS.dw_embedding_size)
         
         with tf.name_scope('combined'):
             model = Combined(cnn, dw)
@@ -224,7 +237,7 @@ with tf.Graph().as_default():
               model.cnn.input_y_binary: y_batch_binary,
               model.cnn.input_y_labels: label_lists_to_sparse_tuple(
                   y_batch_labels, num_classes),  # needs some conversion
-              model.node_ids: node_ids, # node ids
+              model.node_ids: node_ids,  # node ids
               model.cnn.dropout_keep_prob: FLAGS.dropout_keep_prob,
                 
               # the following is in vain

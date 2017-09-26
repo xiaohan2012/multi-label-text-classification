@@ -28,7 +28,7 @@ tf.flags.DEFINE_float("max_document_length", 2000, "Maximum length of document, 
 
 # Architecutural parameters
 
-tf.flags.DEFINE_string("loss_function", 'softmax', "loss function: (softmax|sigmoid) (Default: softmax)")
+tf.flags.DEFINE_string("loss_function", 'sigmoid', "loss function: (softmax|sigmoid) (Default: sigmoid)")
 
 # Model Hyperparameters
 tf.flags.DEFINE_integer("embedding_dim", 128, "Dimensionality of character embedding (default: 128)")
@@ -43,6 +43,7 @@ tf.flags.DEFINE_integer("num_epochs", 200, "Number of training epochs (default: 
 tf.flags.DEFINE_integer("evaluate_every", 100, "Evaluate model on dev set after this many steps (default: 100)")
 tf.flags.DEFINE_integer("checkpoint_every", 100, "Save model after this many steps (default: 100)")
 tf.flags.DEFINE_integer("num_checkpoints", 5, "Number of checkpoints to store (default: 5)")
+
 # Misc Parameters
 tf.flags.DEFINE_boolean("allow_soft_placement", True, "Allow device soft device placement")
 tf.flags.DEFINE_boolean("log_device_placement", False, "Log placement of ops on devices")
@@ -127,7 +128,13 @@ with tf.Graph().as_default():
         out_dir = os.path.abspath(os.path.join(os.path.curdir,
                                                'runs',
                                                'kim_cnn'))
+        
         print("Writing to {}\n".format(out_dir))
+
+        if tf.gfile.Exists(out_dir):
+            print('cleaning ', out_dir)
+            tf.gfile.DeleteRecursively(out_dir)
+        tf.gfile.MakeDirs(out_dir)
 
         # Summaries for loss and precision
         loss_summary = tf.summary.scalar("loss", cnn.loss)
