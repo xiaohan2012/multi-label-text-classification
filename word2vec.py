@@ -18,7 +18,9 @@ class Word2Vec():
                  num_sampled,
                  vocabulary_size,
                  embedding_size,
-                 embedding_value=None):
+                 embedding_value=None,
+                 nce_W_value=None,
+                 nce_b_value=None):
 
         self.vocabulary_size, self.embedding_size = (vocabulary_size,
                                                      embedding_size)
@@ -37,7 +39,8 @@ class Word2Vec():
                     embedding_value = tf.random_uniform(
                         [self.vocabulary_size, self.embedding_size], -1.0, 1.0)
                 else:
-                    assert (self.vocabulary_size, self.embedding_size) == embedding_value.shape, 'shape does not match'
+                    assert (self.vocabulary_size, self.embedding_size) == \
+                        embedding_value.shape, 'shape does not match'
 
                 self.embeddings = tf.Variable(
                     embedding_value,
@@ -46,10 +49,14 @@ class Word2Vec():
 
             with tf.name_scope('nce'):
                 # Construct the variables for the NCE loss
-                self.nce_weights = tf.Variable(
-                    tf.truncated_normal([self.vocabulary_size, self.embedding_size],
-                                        stddev=1.0 / math.sqrt(self.embedding_size)))
-                self.nce_biases = tf.Variable(tf.zeros([self.vocabulary_size]))
+                if nce_W_value is None:
+                    nce_W_value = tf.truncated_normal([self.vocabulary_size, self.embedding_size],
+                                                      stddev=1.0 / math.sqrt(self.embedding_size))
+                self.nce_weights = tf.Variable(nce_W_value)
+
+                if nce_b_value is None:
+                    nce_b_value = tf.zeros([self.vocabulary_size])
+                self.nce_biases = tf.Variable(nce_b_value)
 
         # Compute the average NCE loss for the batch.
         # tf.nce_loss automatically draws a new sample of the negative labels each

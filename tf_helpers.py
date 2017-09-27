@@ -56,14 +56,21 @@ def save_embedding_for_viz(embeddings, session, metadata_path, checkpoint_dir):
     print('embedding for visualization saved')
 
 
-def get_variable_value_from_checkpoint(checkpoint_file, variable_name):
-    """load from checkpoint_file and read the value of the variable of `variable_name`
+def get_variable_value_from_checkpoint(checkpoint_file, variable_names=[]):
+    """load from checkpoint_file and read the values of the variables of `variable_name`
+    
+    return
+
+    list of variable values
     """
     sess = tf.Session()
     with sess.as_default():
         saver = tf.train.import_meta_graph("{}.meta".format(checkpoint_file))
         saver.restore(sess, checkpoint_file)
 
-        embedding_table = sess.graph.get_operation_by_name(variable_name)
-        val = embedding_table.outputs[0].eval()
-    return val
+        vals = []
+        for variable_name in variable_names:
+            embedding_table = sess.graph.get_operation_by_name(variable_name)
+            vals.append(embedding_table.outputs[0].eval())
+
+    return vals
