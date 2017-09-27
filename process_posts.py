@@ -9,7 +9,7 @@ import tensorflow as tf
 from data_helpers import strip_tags, clean_str
 
 
-tf.flags.DEFINE_string('data_dir', 'data/stackexchange/datascience', 'directory of dataset')
+tf.flags.DEFINE_string('data_dir', '', 'directory of dataset')
 tf.flags.DEFINE_integer('tag_freq_threshold', 0, 'minimum frequency of a tag')
 
 FLAGS = tf.flags.FLAGS

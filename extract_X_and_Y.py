@@ -15,8 +15,8 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from data_helpers import MultiLabelIntegerEncoder
 
 
-tf.flags.DEFINE_string('data_dir', 'data/stackexchange/datascience/', 'directory of dataset')
-tf.flags.DEFINE_integer('tag_freq_threshold', 5, 'minimum frequency of a tag')
+tf.flags.DEFINE_string('data_dir', '', 'directory of dataset')
+tf.flags.DEFINE_integer('tag_freq_threshold', 0, 'minimum frequency of a tag')
 
 FLAGS = tf.flags.FLAGS
 FLAGS._parse_flags()

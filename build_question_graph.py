@@ -1,6 +1,6 @@
 # coding: utf-8
 
-
+import tensorflow as tf
 import pandas as pd
 import numpy as np
 import pickle as pkl
@@ -14,7 +14,12 @@ from scipy import sparse as sp
 
 QUESTION = 1
 
-data_dir = 'data/stackexchange/datascience'
+tf.flags.DEFINE_string('data_dir', '', 'directory of dataset')
+
+FLAGS = tf.flags.FLAGS
+FLAGS._parse_flags()
+
+data_dir = FLAGS.data_dir
 df = pd.read_csv('{}/posts.csv'.format(data_dir), sep=',')
 
 # create a graph
