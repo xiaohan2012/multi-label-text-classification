@@ -60,13 +60,19 @@ tf.flags.DEFINE_integer("dw_num_negative_samples", 64, "Number of negative examp
 tf.flags.DEFINE_integer("num_epochs", 200, "Number of training epochs (default: 200)")
 tf.flags.DEFINE_integer("evaluate_every", 100, "Evaluate model on dev set after this many steps (default: 100)")
 tf.flags.DEFINE_integer("checkpoint_every", 100, "Save model after this many steps (default: 100)")
-tf.flags.DEFINE_integer("num_checkpoints", 5, "Number of checkpoints to store (default: 5)")
+tf.flags.DEFINE_integer("num_checkpoints", 1, "Number of checkpoints to store (default: 1)")  # disk quota is low
 
 tf.flags.DEFINE_string("pretrained_embedding_checkpoint_dir", "",
                        "directory of checkpoint where pretrained embedding lives")
 tf.flags.DEFINE_string("pretrained_embedding_name",
                        "embedding/table",
                        "variable name of the pretrained emebdding (defualt: embedding/table)")
+tf.flags.DEFINE_string("pretrained_nce_W_name",
+                       "nce/Variable",
+                       "variable name of the nce W parameter (defualt: nce/Variable)")
+tf.flags.DEFINE_string("pretrained_nce_b_name",
+                       "nce/Variable_1",
+                       "variable name of the nce W parameter (defualt: nce/Variable_1)")
 
 # Misc Parameters
 tf.flags.DEFINE_boolean("allow_soft_placement", True, "Allow device soft device placement")
@@ -162,20 +168,25 @@ with tf.Graph().as_default():
                 loss_function=FLAGS.loss_function,
                 redefine_output_layer=True)
 
+        if FLAGS.pretrained_embedding_checkpoint_dir:
+            print('use pretrained embedding from {}'.format(
+                FLAGS.pretrained_embedding_checkpoint_dir))
+
+            embedding_value, nce_W_value, nce_b_value = get_variable_value_from_checkpoint(
+                FLAGS.pretrained_embedding_checkpoint_dir,
+                [FLAGS.pretrained_embedding_name,
+                 FLAGS.pretrained_nce_W_name,
+                 FLAGS.pretrained_nce_b_name])
+        else:
+            embedding_value, nce_W_value, nce_b_value = None, None, None
+            
         with tf.name_scope('dw'):
-            if FLAGS.pretrained_embedding_checkpoint_dir:
-                print('use pretrained embedding')
-                embedding_value = get_variable_value_from_checkpoint(
-                    FLAGS.pretrained_embedding_checkpoint_dir,
-                    FLAGS.pretrained_embedding_name)
-                dw = Word2Vec(FLAGS.dw_num_negative_samples,
-                              vocabulary_size,
-                              FLAGS.dw_embedding_size,
-                              embedding_value=embedding_value)
-            else:
-                dw = Word2Vec(FLAGS.dw_num_negative_samples,
-                              vocabulary_size,
-                              FLAGS.dw_embedding_size)
+            dw = Word2Vec(FLAGS.dw_num_negative_samples,
+                          vocabulary_size,
+                          FLAGS.dw_embedding_size,
+                          embedding_value=embedding_value,
+                          nce_W_value=nce_W_value,
+                          nce_b_value=nce_b_value)
         
         with tf.name_scope('combined'):
             model = Combined(cnn, dw)
@@ -184,7 +195,6 @@ with tf.Graph().as_default():
         
         label_train_op = tf.train.AdamOptimizer(1e-3).minimize(model.label_loss)
         graph_train_op = tf.train.GradientDescentOptimizer(1.0).minimize(model.graph_loss)
-
 
         # Output directory for models and summaries
         out_dir = os.path.abspath(os.path.join(os.path.curdir, "runs", 'combined'))

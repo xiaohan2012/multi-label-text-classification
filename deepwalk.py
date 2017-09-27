@@ -16,7 +16,7 @@ from tf_helpers import save_embedding_for_viz
 
 tf.flags.DEFINE_string('data_dir', 'data/stackexchange/datascience/', 'directory of dataset')
 tf.flags.DEFINE_integer("checkpoint_every", 5000, "Save model after this many steps (default: 5000)")
-tf.flags.DEFINE_integer("num_checkpoints", 5, "Number of checkpoints to store (default: 5)")
+tf.flags.DEFINE_integer("num_checkpoints", 1, "Number of checkpoints to store (default: 1)")
 
 
 # In[4]:
