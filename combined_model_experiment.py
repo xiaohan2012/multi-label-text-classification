@@ -171,7 +171,7 @@ with tf.Graph().as_default():
         global_step = tf.Variable(0, name="global_step", trainable=False)
         
         label_train_op = tf.train.AdamOptimizer(1e-3).minimize(model.label_loss)
-        graph_train_op = tf.train.GradientDescentOptimizer(1.0).minimize(model.graph_loss)
+        graph_train_op = tf.train.GradientDescentOptimizer(1e-2).minimize(model.graph_loss)
 
         # Output directory for models and summaries
         dataset_id = list(filter(None, data_dir.split('/')))[-1]

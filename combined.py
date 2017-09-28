@@ -40,7 +40,7 @@ class Combined():
             self.predictions = tf.argmax(self.scores, 1, name="predictions")
 
     def add_losses(self):
-        # CalculateMean cross-entropy loss        
+        # CalculateMean cross-entropy loss
         with tf.name_scope("loss"):
             if self.cnn.loss_function == 'sigmoid':
                 print('use sigmoid xentropy')
