@@ -1,5 +1,6 @@
 # coding: utf-8
 
+import tensorflow as tf
 import numpy as np
 from tqdm import tqdm
 from graph_tool import load_graph
@@ -42,7 +43,16 @@ def yield_n_random_walks(n, g, walk_length, alpha):
 
 
 if __name__ == '__main__':
-    data_dir = 'data/stackexchange/datascience/'
+    tf.flags.DEFINE_string('data_dir', 'data/stackexchange/datascience/', 'directory of dataset')
+
+    FLAGS = tf.flags.FLAGS
+    FLAGS._parse_flags()
+    print("\nParameters:")
+    for attr, value in sorted(FLAGS.__flags.items()):
+        print("{}={}".format(attr.upper(), value))
+    print("")
+
+    data_dir = FLAGS.data_dir
 
     # params on random walk
     num_walks_per_node = 80
@@ -58,3 +68,4 @@ if __name__ == '__main__':
     with open('{}/random_walks.txt'.format(data_dir), 'w') as f:
         for walk in tqdm(yield_n_random_walks(total, g, walk_length, alpha), total=total):
             f.write(' '.join(map(str, walk)) + '\n')
+    print('written to ', '{}/random_walks.txt'.format(data_dir))

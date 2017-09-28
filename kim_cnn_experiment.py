@@ -12,13 +12,12 @@ from eval_helpers import label_lists_to_sparse_tuple
 from data_helpers import batch_iter, load_pickle
 
 
-# In[4]:
-
 tf.flags.DEFINE_string('data_dir', 'data/stackexchange/datascience/', 'directory of dataset')
 tf.flags.DEFINE_integer('tag_freq_threshold', 5, 'minimum frequency of a tag')
 
 tf.flags.DEFINE_float("dev_sample_percentage", .1, "Percentage of the training data to use for validation")
-tf.flags.DEFINE_float("max_document_length", 2000, "Maximum length of document, exceeding part is truncated")
+tf.flags.DEFINE_float("max_document_length", 2000,
+                      "Maximum length of document, exceeding part is truncated")
 
 # Architecutural parameters
 
