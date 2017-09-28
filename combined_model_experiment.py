@@ -305,7 +305,7 @@ with tf.Graph().as_default():
                 
               # in vain
               model.dw.train_inputs: [0],
-              model.dw.train_labels: [[0]],                
+              model.dw.train_labels: [[0]],
             }
             step, summaries, label_loss, p1, p3, p5 = sess.run(
                 [global_step, dev_summary_op, model.label_loss, model.p1, model.p3, model.p5],
