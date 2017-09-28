@@ -4,6 +4,7 @@ import collections
 import numpy as np
 import random
 from html.parser import HTMLParser
+from scipy.sparse import csr_matrix
 
 
 def clean_str(string):
@@ -68,16 +69,40 @@ def batch_iter(data, batch_size, num_epochs, shuffle=True):
             
 
 class MultiLabelIntegerEncoder:
+    """transform """
     def fit(self, labels):
         self.id2label_ = dict(enumerate(set(itertools.chain(*labels))))
         self.label2id_ = dict(zip(self.id2label_.values(), self.id2label_.keys()))
 
     def transform(self, labels):
-        return [[self.label2id_.get(l, -1) for l in ls] for ls in labels]
+        return [[self.label2id_[l] for l in ls
+                 if l in self.label2id_]  # will ignore unseen labels
+                for ls in labels]
 
     def fit_transform(self, labels):
         self.fit(labels)
         return self.transform(labels)
+
+
+def label_ids_to_binary_matrix(labels_list):
+    """
+    list of label ids to binary indicator matrix
+
+    args:
+
+    list of list of int
+
+    return:
+
+    csr_matrix
+    """
+    size = sum(len(ls) for ls in labels_list)
+    row_indx = list(itertools.chain(
+        *[list(itertools.repeat(i, len(ls)))
+          for i, ls in enumerate(labels_list)]))
+    col_indx = list(itertools.chain(*labels_list))
+    return csr_matrix((np.ones(size), (row_indx, col_indx)),
+                      shape=(len(labels_list), len(set(col_indx)))).toarray()
 
 
 class RWBatchGenerator():

@@ -8,17 +8,14 @@ import datetime
 import pandas as pd
 import itertools
 
-
-from scipy.sparse import csr_matrix
 from sklearn.cross_validation import train_test_split
 from tensorflow.contrib import learn
-from itertools import repeat, chain
 
 from kim_cnn import KimCNN
 from word2vec import Word2Vec
 from combined import Combined
 from eval_helpers import label_lists_to_sparse_tuple
-from data_helpers import batch_iter, RWBatchGenerator
+from data_helpers import batch_iter, RWBatchGenerator, label_ids_to_binary_matrix
 from tf_helpers import get_variable_value_from_checkpoint
                 
 from tensorflow.python import debug as tf_debug
@@ -109,12 +106,7 @@ node_ids = np.arange(X.shape[0])
 # load train/test data
 Y_labels = pkl.load(open(os.path.join(data_dir, "Y.pkl"), 'rb'))
 
-
-size = sum(len(ls) for ls in Y_labels)
-row_indx = list(chain(*[list(repeat(i, len(ls))) for i, ls in enumerate(Y_labels)]))
-col_indx = list(chain(*Y_labels))
-Y_binary = csr_matrix((np.ones(size), (row_indx, col_indx)),
-                      shape=(len(Y_labels), len(set(col_indx)))).toarray()
+Y_binary = label_ids_to_binary_matrix(Y_labels)
 
 
 # split data
