@@ -56,11 +56,11 @@ print('dataset_id:', dataset_id)
 
 # load data
 # ===============================================
-train_text, dev_text, test_text = load_pickle(
+train_text, dev_text, _ = load_pickle(
     os.path.join(data_dir, "text_split.pkl"))
-y_id_train, y_id_dev, y_id_test = load_pickle(
+y_id_train, y_id_dev, _ = load_pickle(
     os.path.join(data_dir, "labels_id_split.pkl"))
-y_binary_train, y_binary_dev, y_binary_test = load_pickle(
+y_binary_train, y_binary_dev, _ = load_pickle(
     os.path.join(data_dir, "labels_binary_split.pkl"))
 
 # preprocessing text documents

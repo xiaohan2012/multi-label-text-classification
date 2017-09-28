@@ -42,15 +42,20 @@ def labels_to_str_list(y_labels):
     return list(map(lambda s: s.split(','), y_labels))
 
 
+
+
 y_ints_train = label_encoder.fit_transform(labels_to_str_list(y_labels_train))
-y_ints_dev, y_ints_test = label_encoder.transform(y_labels_dev), \
-                          label_encoder.transform(y_labels_test)
+y_ints_dev, y_ints_test = label_encoder.transform(labels_to_str_list(y_labels_dev)), \
+                          label_encoder.transform(labels_to_str_list(y_labels_test))
+
+print('y_ints_dev[0]', y_ints_dev[0])
 
 n_cols = len(set(itertools.chain(*y_ints_train)))
 n_cols += 1  # for UNK labels
 
 y_binary_train = label_ids_to_binary_matrix(y_ints_train, (len(y_ints_train), n_cols))
 y_binary_dev = label_ids_to_binary_matrix(y_ints_dev, (len(y_ints_dev), n_cols))
+print('y_binary_dev', y_binary_dev)
 y_binary_test = label_ids_to_binary_matrix(y_ints_test, (len(y_ints_test), n_cols))
 
 text_path = os.path.join(data_dir, 'text_split.pkl')
