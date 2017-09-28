@@ -1,20 +1,26 @@
 # coding: utf-8
 
+# supprese warning
 import pickle as pkl
 import numpy as np
 import tensorflow as tf
 import os
+import warnings
 
-from sklearn.cross_validation import train_test_split
+
+def warn(*args, **kwargs):
+    pass
+
+warnings.warn = warn
 
 from fastxml import Trainer, Inferencer
-from fastxml.weights import propensity
 
 from eval_helpers import precision_at_ks
 
 
-tf.flags.DEFINE_string('data_dir', 'data/stackexchange/datascience/', 'directory of dataset')
-tf.flags.DEFINE_integer('tag_freq_threshold', 5, 'minimum frequency of a tag')
+tf.flags.DEFINE_string('data_dir', 'data/datascience/', 'directory of dataset')
+tf.flags.DEFINE_integer('n_trees', 32, 'number of forests')
+tf.flags.DEFINE_boolean('eval', False, "whether evaluate on test or not")
 
 FLAGS = tf.flags.FLAGS
 FLAGS._parse_flags()
@@ -22,44 +28,38 @@ FLAGS._parse_flags()
 data_dir = FLAGS.data_dir
 
 # load train/test data
-X = pkl.load(open(os.path.join(data_dir, "X.pkl"), 'rb'))
-Y = pkl.load(open(os.path.join(data_dir, "Y.pkl"), 'rb'))
+x_train, x_dev, x_test = pkl.load(open(os.path.join(data_dir, "tfidf_split.pkl"), 'rb'))
+y_train, y_dev, y_test = pkl.load(open(os.path.join(data_dir, "labels_id_split.pkl"), 'rb'))
 
 # convert dtype to be compatible with fastxml
-X.data = np.asarray(X.data, dtype=np.float32)
-
-# split data
-X_train, X_test, Y_train, Y_test = train_test_split(X, Y, train_size=0.8, random_state=42)
-
+x_train.data = np.asarray(x_train.data, dtype=np.float32)
+x_dev.data = np.asarray(x_dev.data, dtype=np.float32)
+x_test.data = np.asarray(x_test.data, dtype=np.float32)
 
 # fastxml
 model_path = os.path.join(data_dir, 'fastxml.model')
-
-trainer = Trainer(n_trees=32, n_jobs=-1)
-trainer.fit(list(X_train), Y_train)
-trainer.save(model_path)
+     
+if not FLAGS.eval:
+    print("training...")
+    trainer = Trainer(n_trees=FLAGS.n_trees, n_jobs=-1)
+    trainer.fit(list(x_train), y_train)
+    trainer.save(model_path)
 
 clf = Inferencer(model_path)
-pred = clf.predict(X_test)
 
+
+ks = [1, 3, 5]
 print("fastxml:")
-precision_at_ks(pred, Y_test)
 
+if not FLAGS.eval:
+    print('validating...')
+    pred = clf.predict(x_dev)
+    precs = precision_at_ks(pred, y_dev, ks=ks)
+else:
+    print('testing...')
+    pred = clf.predict(x_test)
+    precs = precision_at_ks(pred, y_test, ks=ks)
 
-# PFastreXML
-model_path = os.path.join(data_dir, 'pfastrexml.model')
-
-weights = propensity(Y_train)
-
-trainer = Trainer(n_trees=32, n_jobs=-1, leaf_classifiers=True)
-
-trainer.fit(list(X_train), Y_train, weights)
-
-trainer.save(model_path)
-
-clf = Inferencer(model_path)
-
-pred = clf.predict(X_test)
-
-print("PFastreXML:")
-precision_at_ks(pred, Y_test)
+print("{} result".format("Test" if FLAGS.eval else "Dev"))
+for p, k in zip(precs, ks):
+    print("p@{}: {:.2f}".format(k, p))
