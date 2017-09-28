@@ -1,4 +1,5 @@
 import re
+import pickle as pkl
 import itertools
 import collections
 import numpy as np
@@ -84,7 +85,7 @@ class MultiLabelIntegerEncoder:
         return self.transform(labels)
 
 
-def label_ids_to_binary_matrix(labels_list):
+def label_ids_to_binary_matrix(labels_list, shape):
     """
     list of label ids to binary indicator matrix
 
@@ -102,7 +103,7 @@ def label_ids_to_binary_matrix(labels_list):
           for i, ls in enumerate(labels_list)]))
     col_indx = list(itertools.chain(*labels_list))
     return csr_matrix((np.ones(size), (row_indx, col_indx)),
-                      shape=(len(labels_list), len(set(col_indx)))).toarray()
+                      shape=shape).toarray()
 
 
 class RWBatchGenerator():
@@ -176,3 +177,6 @@ class RWBatchGenerator():
 
         return (batch, labels)
     
+
+def load_pickle(path, mode='rb'):
+    return pkl.load(open(path, mode))

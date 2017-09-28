@@ -1,19 +1,15 @@
 # coding: utf-8
 
 import os
-import pickle as pkl
 import numpy as np
 import tensorflow as tf
 import datetime
-import pandas as pd
 
-
-from sklearn.cross_validation import train_test_split
 from tensorflow.contrib import learn
 
 from kim_cnn import KimCNN
 from eval_helpers import label_lists_to_sparse_tuple
-from data_helpers import batch_iter, label_ids_to_binary_matrix
+from data_helpers import batch_iter, load_pickle
 
 
 # In[4]:
@@ -55,28 +51,27 @@ for attr, value in sorted(FLAGS.__flags.items()):
 print("")
 
 data_dir = FLAGS.data_dir
+dataset_id = list(filter(None, data_dir.split('/')))[-1]
+print('dataset_id:', dataset_id)
 
+# load data
+# ===============================================
+train_text, dev_text, test_text = load_pickle(
+    os.path.join(data_dir, "text_split.pkl"))
+y_id_train, y_id_dev, y_id_test = load_pickle(
+    os.path.join(data_dir, "labels_id_split.pkl"))
+y_binary_train, y_binary_dev, y_binary_test = load_pickle(
+    os.path.join(data_dir, "labels_binary_split.pkl"))
 
-text_path = os.path.join(data_dir, "input_text.csv")
-tdf = pd.read_csv(text_path, header=None)
-x_text = tdf[1]
-
-
+# preprocessing text documents
+# ===============================================
 vocab_processor = learn.preprocessing.VocabularyProcessor(FLAGS.max_document_length)
-X = np.array(list(vocab_processor.fit_transform(x_text)))
+x_train = np.array(list(vocab_processor.fit_transform(train_text)))
+x_dev = np.array(list(vocab_processor.transform(dev_text)))
 
-
-# load train/test data
-Y_labels = pkl.load(open(os.path.join(data_dir, "Y.pkl"), 'rb'))
-
-Y_binary = label_ids_to_binary_matrix(Y_labels)
-
-# split data
-x_train, x_dev, y_train_binary, y_dev_binary, y_train_labels, y_dev_labels = train_test_split(
-    X, Y_binary, Y_labels, train_size=1 - FLAGS.dev_sample_percentage, random_state=42)
 print("Train/Dev split: {:d}/{:d}".format(len(x_train), len(x_dev)))
 
-num_classes = y_train_binary.shape[1]
+num_classes = y_binary_train.shape[1]
 print("num of classes: {:d}".format(num_classes))
 
 
@@ -118,7 +113,7 @@ with tf.Graph().as_default():
 
         # Output directory for models and summaries
         out_dir = os.path.abspath(os.path.join(os.path.curdir,
-                                               'runs',
+                                               'runs', dataset_id,
                                                'kim_cnn'))
         
         print("Writing to {}\n".format(out_dir))
@@ -152,7 +147,7 @@ with tf.Graph().as_default():
         saver = tf.train.Saver(tf.global_variables(), max_to_keep=FLAGS.num_checkpoints)
 
         # Write vocabulary
-        vocab_processor.save(os.path.join(out_dir, "vocab"))
+        vocab_processor.save(os.path.join(data_dir, "vocab"))
 
         # Initialize all variables
         sess.run(tf.global_variables_initializer())
@@ -191,23 +186,25 @@ with tf.Graph().as_default():
                 [global_step, dev_summary_op, cnn.loss, cnn.p1, cnn.p3, cnn.p5],
                 feed_dict)
             time_str = datetime.datetime.now().isoformat()
-            print("{}: step {}, loss {:g}, p1 {:g}, p3 {:g}, p5 {:g}".format(
+            print("[DEV] {}: step {}, loss {:g}, p1 {:g}, p3 {:g}, p5 {:g}".format(
                 time_str, step, loss, p1, p3, p5))
             if writer:
                 writer.add_summary(summaries, step)
 
         # Generate batches
         batches = batch_iter(
-            list(zip(x_train, y_train_binary, y_train_labels)), FLAGS.batch_size, FLAGS.num_epochs)
+            list(zip(x_train, y_binary_train, y_id_train)), FLAGS.batch_size, FLAGS.num_epochs)
         # Training loop. For each batch...
         for batch in batches:
             x_batch, y_batch_binary, y_train_labels = zip(*batch)
             train_step(x_batch, y_batch_binary, y_train_labels)
             current_step = tf.train.global_step(sess, global_step)
+
             if current_step % FLAGS.evaluate_every == 0:
                 print("\nEvaluation:")
-                dev_step(x_dev, y_dev_binary, y_dev_labels, writer=dev_summary_writer)
+                dev_step(x_dev, y_binary_dev, y_id_dev, writer=dev_summary_writer)
                 print("")
+
             if current_step % FLAGS.checkpoint_every == 0:
                 path = saver.save(sess, checkpoint_prefix, global_step=current_step)
                 print("Saved model checkpoint to {}\n".format(path))
