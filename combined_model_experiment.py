@@ -15,7 +15,7 @@ from kim_cnn import KimCNN
 from word2vec import Word2Vec
 from combined import Combined
 from eval_helpers import label_lists_to_sparse_tuple
-from data_helpers import batch_iter, RWBatchGenerator, label_ids_to_binary_matrix
+from data_helpers import batch_iter, RWBatchGenerator, label_ids_to_binary_matrix, load_pickle
 from tf_helpers import get_variable_value_from_checkpoint
                 
 from tensorflow.python import debug as tf_debug
@@ -28,7 +28,6 @@ from tf_helpers import save_embedding_for_viz
 tf.flags.DEFINE_string('data_dir', 'data/stackexchange/datascience/', 'directory of dataset')
 tf.flags.DEFINE_integer('tag_freq_threshold', 5, 'minimum frequency of a tag')
 
-tf.flags.DEFINE_float("dev_sample_percentage", .1, "Percentage of the training data to use for validation")
 tf.flags.DEFINE_float("max_document_length", 2000, "Maximum length of document, exceeding part is truncated")
 
 # Architecutural parameters for KimCNN
@@ -89,50 +88,36 @@ print("")
 data_dir = FLAGS.data_dir
 
 
-# In[6]:
+# load data
+# ===============================================
+train_text, dev_text, _ = load_pickle(
+    os.path.join(data_dir, "text_split.pkl"))
+y_id_train, y_id_dev, _ = load_pickle(
+    os.path.join(data_dir, "labels_id_split.pkl"))
+y_binary_train, y_binary_dev, _ = load_pickle(
+    os.path.join(data_dir, "labels_binary_split.pkl"))
+node_ids_train, node_ids_dev, _ = load_pickle(
+    os.path.join(data_dir, "node_ids_split.pkl"))
 
-
-# load text data and label information
-
-text_path = os.path.join(data_dir, "input_text.csv")
-tdf = pd.read_csv(text_path, header=None)
-x_text = tdf[1]
-
-
+# preprocessing text documents
+# ===============================================
 vocab_processor = learn.preprocessing.VocabularyProcessor(FLAGS.max_document_length)
-X = np.array(list(vocab_processor.fit_transform(x_text)))
-node_ids = np.arange(X.shape[0])
+x_train = np.array(list(vocab_processor.fit_transform(train_text)))
+x_dev = np.array(list(vocab_processor.transform(dev_text)))
 
-# load train/test data
-Y_labels = pkl.load(open(os.path.join(data_dir, "Y.pkl"), 'rb'))
-
-Y_binary = label_ids_to_binary_matrix(Y_labels)
-
-
-# split data
-x_train, x_dev, y_train_binary, y_dev_binary, y_train_labels, y_dev_labels, train_node_ids, dev_node_ids = train_test_split(
-    X, Y_binary, Y_labels, node_ids, train_size=1 - FLAGS.dev_sample_percentage, random_state=42)
 print("Train/Dev split: {:d}/{:d}".format(len(x_train), len(x_dev)))
 
-num_classes = y_train_binary.shape[1]
+num_classes = y_binary_train.shape[1]
 print("num of classes: {:d}".format(num_classes))
 
 
-# In[7]:
-
-
 # load node embedding data
-
 walks = RWBatchGenerator.read_walks("{}/random_walks.txt".format(data_dir))
 
 vocabulary_size = len(set(itertools.chain(*walks)))
 
 dw_data_generator = RWBatchGenerator(
     walks, FLAGS.dw_batch_size, FLAGS.dw_num_skips, FLAGS.dw_skip_window)
-
-
-# In[8]:
-
 
 # Training
 # ==================================================
@@ -189,7 +174,10 @@ with tf.Graph().as_default():
         graph_train_op = tf.train.GradientDescentOptimizer(1.0).minimize(model.graph_loss)
 
         # Output directory for models and summaries
-        out_dir = os.path.abspath(os.path.join(os.path.curdir, "runs", 'combined'))
+        dataset_id = list(filter(None, data_dir.split('/')))[-1]
+        print('dataset_id:', dataset_id)
+        out_dir = os.path.abspath(os.path.join(os.path.curdir, "runs",
+                                               dataset_id, 'combined'))
         print("Writing to {}\n".format(out_dir))
 
         if tf.gfile.Exists(out_dir):
@@ -226,7 +214,7 @@ with tf.Graph().as_default():
         saver = tf.train.Saver(tf.global_variables(), max_to_keep=FLAGS.num_checkpoints)
 
         # Write vocabulary
-        vocab_processor.save(os.path.join(out_dir, "vocab"))
+        vocab_processor.save(os.path.join(data_dir, "vocab"))
         
         sess.run(tf.global_variables_initializer())
         
@@ -249,7 +237,8 @@ with tf.Graph().as_default():
               model.dw.train_labels: [[0]],
             }
             _, step, summaries, label_loss, p1, p3, p5 = sess.run(
-                [label_train_op, global_step, train_summary_op, model.label_loss, model.p1, model.p3, model.p5],
+                [label_train_op, global_step, train_summary_op, model.label_loss,
+                 model.p1, model.p3, model.p5],
                 feed_dict)
             time_str = datetime.datetime.now().isoformat()
             print("{}: step {}, label loss {:g}, p1 {:g}, p3 {:g}, p5 {:g}".format(
@@ -270,7 +259,7 @@ with tf.Graph().as_default():
               model.cnn.input_y_binary: [[0] * num_classes],  # with no label
               model.cnn.input_y_labels: label_lists_to_sparse_tuple(
                   [[0]], num_classes),  # needs some conversion
-              model.node_ids: [0], # node ids
+              model.node_ids: [0],  # node ids
               model.cnn.dropout_keep_prob: FLAGS.dropout_keep_prob,
                 
             }
@@ -281,7 +270,6 @@ with tf.Graph().as_default():
             print("{}: step {}, graph loss {:g}".format(
                 time_str, step, graph_loss))
             writer.add_summary(summaries, step)
-
             
         def dev_step(x_batch, y_batch_binary, y_batch_labels, node_ids, writer):
             """
@@ -292,7 +280,7 @@ with tf.Graph().as_default():
               model.cnn.input_y_binary: y_batch_binary,
               model.cnn.input_y_labels: label_lists_to_sparse_tuple(
                   y_batch_labels, num_classes),  # needs some conversion
-              model.node_ids: node_ids, # node ids                
+              model.node_ids: node_ids,  # node ids
               model.cnn.dropout_keep_prob: 1.0,
                 
               # in vain
@@ -309,7 +297,8 @@ with tf.Graph().as_default():
             writer.add_summary(summaries, step)
 
         batches = batch_iter(
-            list(zip(x_train, y_train_binary, y_train_labels, train_node_ids)), FLAGS.batch_size, FLAGS.num_epochs)
+            list(zip(x_train, y_binary_train, y_id_train, node_ids_train)),
+            FLAGS.batch_size, FLAGS.num_epochs)
 
         for batch in batches:
             # train label part
@@ -325,7 +314,7 @@ with tf.Graph().as_default():
             
             if current_step % FLAGS.evaluate_every == 0:
                 print("\nEvaluation:")
-                dev_step(x_dev, y_dev_binary, y_dev_labels, dev_node_ids, dev_summary_writer)
+                dev_step(x_dev, y_binary_dev, y_id_dev, node_ids_dev, dev_summary_writer)
                 print("")
                 
             if current_step % FLAGS.checkpoint_every == 0:

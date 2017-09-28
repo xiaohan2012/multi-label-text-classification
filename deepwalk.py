@@ -1,25 +1,23 @@
 # coding: utf-8
 
-# In[2]:
-
 import tensorflow as tf
 import os
-import time
 import itertools
 import numpy as np
 
+from word2vec import Word2Vec
 from data_helpers import RWBatchGenerator
 from tf_helpers import save_embedding_for_viz
 
 
-# In[3]:
-
 tf.flags.DEFINE_string('data_dir', 'data/stackexchange/datascience/', 'directory of dataset')
 tf.flags.DEFINE_integer("checkpoint_every", 5000, "Save model after this many steps (default: 5000)")
 tf.flags.DEFINE_integer("num_checkpoints", 1, "Number of checkpoints to store (default: 1)")
+tf.flags.DEFINE_boolean("save_viz_embedding", False,
+                        "save embeddding for visualization or not (default: False)")
 
-
-# In[4]:
+tf.flags.DEFINE_integer("num_steps", 100000,
+                        "number of steps")
 
 FLAGS = tf.flags.FLAGS
 FLAGS._parse_flags()
@@ -28,8 +26,6 @@ for attr, value in sorted(FLAGS.__flags.items()):
     print("{}={}".format(attr.upper(), value))
 print("")
 
-
-# In[6]:
 
 data_dir = FLAGS.data_dir
 metadata_path = '/home/cloud-user/code/network_embedding/{}/labels_for_visualization.tsv'.format(data_dir)
@@ -51,8 +47,6 @@ generator = RWBatchGenerator(walks, batch_size, num_skips, skip_window)
 num_sampled = 64    # Number of negative examples to sample.
 
 
-
-from word2vec import Word2Vec
 graph = tf.Graph()
 with graph.as_default():
     model = Word2Vec(num_sampled,
@@ -65,11 +59,10 @@ with graph.as_default():
     init = tf.global_variables_initializer()
 
 
-# In[8]:
+dataset_id = list(filter(None, data_dir.split('/')))[-1]
+print('dataset_id:', dataset_id)
+out_dir = os.path.abspath(os.path.join(os.path.curdir, "runs", dataset_id, "deepwalk"))
 
-timestamp = str(int(time.time()))
-out_dir = os.path.abspath(os.path.join(os.path.curdir, "runs", "deepwalk"))
-#                                       "deepwalk-{}".format(timestamp)))
 if tf.gfile.Exists(out_dir):
     tf.gfile.DeleteRecursively(out_dir)
 tf.gfile.MakeDirs(out_dir)
@@ -91,7 +84,7 @@ if not os.path.exists(checkpoint_dir):
 # In[ ]:
 
 # Step 5: Begin training.
-num_steps = 9999999
+num_steps = FLAGS.num_steps
 
 with tf.Session(graph=graph) as session:
     train_summary_writer = tf.summary.FileWriter(train_summary_dir, session.graph)
@@ -122,10 +115,12 @@ with tf.Session(graph=graph) as session:
 
         if step % FLAGS.checkpoint_every == 0 and step > 0:
             path = saver.save(session, checkpoint_prefix, global_step=step)
-            
+
             print("Saved model checkpoint to {}\n".format(path))
-            
-            save_embedding_for_viz(model.embeddings, session, metadata_path, checkpoint_dir)
+
+            if FLAGS.save_viz_embedding:
+                
+                print('save embedding for viz')
+                save_embedding_for_viz(model.embeddings, session, metadata_path, checkpoint_dir)
             
         train_summary_writer.add_summary(summaries, step)
-       
