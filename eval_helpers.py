@@ -2,6 +2,8 @@ import numpy as np
 import tensorflow as tf
 import itertools
 
+from scipy.sparse import issparse
+
 
 def precision(p, t):
     """
@@ -14,17 +16,22 @@ def precision(p, t):
 
 def precision_at_ks(Y_pred_scores, Y_test, ks=[1, 3, 5, 10]):
     """
-    Y_pred_scores: sparse matrix of dtype float, entry ij is the score of label j for instance i
+    Y_pred_scores: nd.array of dtype float, entry ij is the score of label j for instance i
+    Y_test: list of label ids
     """
-    k = 3
+    result = []
     for k in [1, 3, 5, 10]:
         Y_pred = []
         for i in np.arange(Y_pred_scores.shape[0]):
-            idx = np.argsort(Y_pred_scores[i].data)[::-1]
-            Y_pred.append(set(Y_pred_scores[i].indices[idx[:k]]))
+            if issparse(Y_pred_scores):
+                idx = np.argsort(Y_pred_scores[i].data)[::-1]
+                Y_pred.append(set(Y_pred_scores[i].indices[idx[:k]]))
+            else:  # is ndarray
+                idx = np.argsort(Y_pred_scores[i, :])[::-1]
+                Y_pred.append(set(idx[:k]))
 
-        precision_at_k = np.mean([precision(yp, set(yt)) for yt, yp in zip(Y_test, Y_pred)])
-        print('precision at {}: {}'.format(k, precision_at_k))
+        result.append(np.mean([precision(yp, set(yt)) for yt, yp in zip(Y_test, Y_pred)]))
+    return result
 
 
 def tf_precision_at_k(pred_values, correct_labels, k, name=None):

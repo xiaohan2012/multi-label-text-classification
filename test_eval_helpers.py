@@ -1,17 +1,30 @@
+import pytest
 import numpy as np
 import tensorflow as tf
+from scipy.sparse import csr_matrix
 
-from eval_helpers import tf_precision_at_k, label_lists_to_sparse_tuple
+from eval_helpers import tf_precision_at_k, label_lists_to_sparse_tuple, \
+    precision_at_ks
 
 
-def test_tf_precision_at_k():
+@pytest.fixture
+def pred_value_1():
     # [0, 1], [2, 1], [0, 2]
-    pred_value_1 = np.array([[0.9, 0.8, 0.7], [0.7, 0.8, 0.9], [0.9, 0.7, 0.8]], dtype=np.float32)
+    return np.array([[0.9, 0.8, 0.7], [0.7, 0.8, 0.9], [0.9, 0.7, 0.8]], dtype=np.float32)
 
+
+@pytest.fixture
+def pred_value_2():
     # [2, 1], [0, 1], [2, 1]
-    pred_value_2 = np.array([[0.7, 0.8, 0.9], [0.9, 0.8, 0.7], [0.7, 0.8, 0.9]], dtype=np.float32)
+    return np.array([[0.7, 0.8, 0.9], [0.9, 0.8, 0.7], [0.7, 0.8, 0.9]], dtype=np.float32)
+
+
+@pytest.fixture
+def correct_values():
+    return [[0, 1, 2], [1, 2], [0, 2]]
+
     
-    correct_values = [[0, 1, 2], [1, 2], [0, 2]]
+def test_tf_precision_at_k(pred_value_1, pred_value_2, correct_values):
     n_classes = 3
 
     sparse_tensor_tuple = label_lists_to_sparse_tuple(correct_values, n_classes)
@@ -39,3 +52,19 @@ def test_tf_precision_at_k():
                           correct_labels: sparse_tensor_tuple
                       })
         assert np.isclose(p2, np.mean([1, 0.5, 0.5]))
+
+
+def test_precision_at_k_dense(pred_value_1, pred_value_2, correct_values):
+    p1 = precision_at_ks(pred_value_1, correct_values, ks=[2])[0]
+    assert np.isclose(p1, 1.0)
+        
+    p2 = precision_at_ks(pred_value_2, correct_values, ks=[2])[0]
+    assert np.isclose(p2, np.mean([1, 0.5, 0.5]))
+        
+
+def test_precision_at_k_sparse(pred_value_1, pred_value_2, correct_values):
+    p1 = precision_at_ks(csr_matrix(pred_value_1), correct_values, ks=[2])[0]
+    assert np.isclose(p1, 1.0)
+        
+    p2 = precision_at_ks(csr_matrix(pred_value_2), correct_values, ks=[2])[0]
+    assert np.isclose(p2, np.mean([1, 0.5, 0.5]))
