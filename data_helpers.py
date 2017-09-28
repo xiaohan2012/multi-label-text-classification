@@ -74,10 +74,10 @@ class MultiLabelIntegerEncoder:
     def fit(self, labels):
         self.id2label_ = dict(enumerate(set(itertools.chain(*labels))))
         self.label2id_ = dict(zip(self.id2label_.values(), self.id2label_.keys()))
+        self.UNK = len(self.label2id_)
 
     def transform(self, labels):
-        return [[self.label2id_[l] for l in ls
-                 if l in self.label2id_]  # will ignore unseen labels
+        return [[self.label2id_.get(l, self.UNK) for l in ls]  # if label not there, it's UNK
                 for ls in labels]
 
     def fit_transform(self, labels):

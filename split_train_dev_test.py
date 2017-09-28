@@ -7,7 +7,7 @@ from sklearn.cross_validation import train_test_split
 
 
 tf.flags.DEFINE_string('data_dir', 'data/stackexchange/datascience/', 'directory of dataset')
-tf.flags.DEFINE_float('test_sample_percentage', 0.2, 'precentage for test samples')
+tf.flags.DEFINE_float('test_sample_percentage', 0.1, 'precentage for test samples')
 tf.flags.DEFINE_float('dev_sample_percentage', 0.1, 'precentage for dev samples')
 
 
@@ -37,8 +37,9 @@ node_ids = np.arange(len(x_text))
                                   train_test_split(
                                       x_text, y_labels, node_ids,
                                       train_size=1 - FLAGS.test_sample_percentage,
-                                      random_state=42)
+                                      random_state=123456)
 
+# re-scale
 train_percentage = 1 - FLAGS.dev_sample_percentage - FLAGS.test_sample_percentage
 new_train_percentage = train_percentage / (train_percentage + FLAGS.dev_sample_percentage)
 

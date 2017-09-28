@@ -47,6 +47,7 @@ y_ints_dev, y_ints_test = label_encoder.transform(y_labels_dev), \
                           label_encoder.transform(y_labels_test)
 
 n_cols = len(set(itertools.chain(*y_ints_train)))
+n_cols += 1  # for UNK labels
 
 y_binary_train = label_ids_to_binary_matrix(y_ints_train, (len(y_ints_train), n_cols))
 y_binary_dev = label_ids_to_binary_matrix(y_ints_dev, (len(y_ints_dev), n_cols))

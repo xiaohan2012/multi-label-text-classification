@@ -152,13 +152,13 @@ with tf.Graph().as_default():
         # Initialize all variables
         sess.run(tf.global_variables_initializer())
 
-        def train_step(x_batch, y_batch_binary, y_batch_labels):
+        def train_step(x_batch, y_binary_batch, y_batch_labels):
             """
             A single training step
             """
             feed_dict = {
               cnn.input_x: x_batch,
-              cnn.input_y_binary: y_batch_binary,
+              cnn.input_y_binary: y_binary_batch,
               cnn.input_y_labels: label_lists_to_sparse_tuple(
                   y_batch_labels, num_classes),  # needs some conversion
               cnn.dropout_keep_prob: FLAGS.dropout_keep_prob
@@ -171,13 +171,13 @@ with tf.Graph().as_default():
                 time_str, step, loss, p1, p3, p5))
             train_summary_writer.add_summary(summaries, step)
 
-        def dev_step(x_batch, y_batch_binary, y_batch_labels, writer=None):
+        def dev_step(x_batch, y_binary_batch, y_batch_labels, writer=None):
             """
             Evaluates model on a dev set
             """
             feed_dict = {
               cnn.input_x: x_batch,
-              cnn.input_y_binary: y_batch_binary,
+              cnn.input_y_binary: y_binary_batch,
               cnn.input_y_labels: label_lists_to_sparse_tuple(
                   y_batch_labels, num_classes),  # needs some conversion
               cnn.dropout_keep_prob: 1.0
@@ -196,8 +196,8 @@ with tf.Graph().as_default():
             list(zip(x_train, y_binary_train, y_id_train)), FLAGS.batch_size, FLAGS.num_epochs)
         # Training loop. For each batch...
         for batch in batches:
-            x_batch, y_batch_binary, y_train_labels = zip(*batch)
-            train_step(x_batch, y_batch_binary, y_train_labels)
+            x_batch, y_binary_batch, y_id_batch = zip(*batch)
+            train_step(x_batch, y_binary_batch, y_id_batch)
             current_step = tf.train.global_step(sess, global_step)
 
             if current_step % FLAGS.evaluate_every == 0:
