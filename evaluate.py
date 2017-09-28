@@ -11,10 +11,10 @@ from data_helpers import load_pickle, batch_iter
 from eval_helpers import precision_at_ks
 
 
-tf.flags.DEFINE_string('data_dir', 'data/stackexchange/datascience/', 'directory of dataset')
+tf.flags.DEFINE_string('data_dir', '', 'directory of dataset')
 tf.flags.DEFINE_boolean('use_node_embedding', False, 'use node embedding or not')
 
-tf.flags.DEFINE_string("checkpoint_dir", "runs/datascience/kim_cnn/checkpoints/",
+tf.flags.DEFINE_string("checkpoint_dir", "",
                        "Checkpoint directory from training run")
 tf.flags.DEFINE_integer("batch_size", 64, "")
 
