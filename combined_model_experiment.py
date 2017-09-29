@@ -170,7 +170,9 @@ with tf.Graph().as_default():
 
         global_step = tf.Variable(0, name="global_step", trainable=False)
         
-        label_train_op = tf.train.AdamOptimizer(1e-3).minimize(model.label_loss)
+        label_train_op = tf.train.AdamOptimizer(1e-3).minimize(
+            model.label_loss,
+            global_step=global_step)
         graph_train_op = tf.train.GradientDescentOptimizer(1e-2).minimize(model.graph_loss)
 
         # Output directory for models and summaries
@@ -217,6 +219,9 @@ with tf.Graph().as_default():
         vocab_processor.save(os.path.join(data_dir, "vocab"))
         
         sess.run(tf.global_variables_initializer())
+
+        #### DEBUG
+        sess.graph.finalize()
         
         def train_label_step(x_batch, y_batch_binary, y_batch_labels, node_ids, writer):
             """
@@ -310,8 +315,6 @@ with tf.Graph().as_default():
             batch_inputs, batch_labels = dw_data_generator.next_batch()
             train_graph_step(batch_inputs, batch_labels, train_summary_writer)
             
-            current_step = tf.train.global_step(sess, global_step)  # one step for graph training
-            
             if current_step % FLAGS.evaluate_every == 0:
                 print("\nEvaluation:")
                 dev_step(x_dev, y_binary_dev, y_id_dev, node_ids_dev, dev_summary_writer)
@@ -319,6 +322,4 @@ with tf.Graph().as_default():
                 
             if current_step % FLAGS.checkpoint_every == 0:
                 path = saver.save(sess, checkpoint_prefix, global_step=current_step)
-                print("Saved model checkpoint to {}\n".format(path))
-            
-            global_step += 1
+                print("Saved model checkpoint to {}\n".format(path))        
