@@ -1,4 +1,4 @@
-# network_embedding
+# embedding-based multi-label classification
 
 this projects attempts to combine network embedding and convolutional neural network for multi-label text classification.
 
