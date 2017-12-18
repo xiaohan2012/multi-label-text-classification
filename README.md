@@ -1,8 +1,15 @@
-# embedding-based multi-label classification
+# graph embedding + deep learning for multi-label text classification
 
-this projects attempts to combine network embedding and convolutional neural network for multi-label text classification.
+this projects attempts to combine:
 
-[read more](https://github.com/xiaohan2012/network_embedding/blob/master/project-slides.pdf)
+- **graph embedding**
+- **ConNet**
+
+for the purpose of **multi-label text classification**.
+
+I compared three methods on stackexchange datasets, where the goal is to predict the tags of posts.
+
+If you wan to know more, here are [some slides](https://github.com/xiaohan2012/network_embedding/blob/master/project-slides.pdf)
 
 # utility scripts
 
