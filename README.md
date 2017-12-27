@@ -3,7 +3,7 @@
 this projects attempts to combine:
 
 - **graph embedding**
-- **ConNet**
+- **ConvNet**
 
 for the purpose of **multi-label text classification**.
 
