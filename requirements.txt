@@ -113,7 +113,7 @@ tqdm==4.10.0
 traitlets==4.3.2
 ufw==0.35
 unattended-upgrades==0.1
-urllib3==1.13.1
+urllib3==1.26.5
 virtualenv==15.0.1
 wcwidth==0.1.7
 webencodings==0.5.1
